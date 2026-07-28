@@ -6,7 +6,13 @@ from xgboost import XGBRegressor
 
 class XGBoostForecaster:
     def __init__(self, **kwargs):
-        params = dict(n_estimators=300, max_depth=6, learning_rate=0.05, random_state=42, n_jobs=-1)
+        params = {
+            "n_estimators": 300,
+            "max_depth": 6,
+            "learning_rate": 0.05,
+            "random_state": 42,
+            "n_jobs": -1,
+        }
         params.update(kwargs)
         self.model = XGBRegressor(**params)
 

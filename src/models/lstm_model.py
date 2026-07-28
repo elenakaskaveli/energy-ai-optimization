@@ -22,7 +22,14 @@ class LSTMForecaster:
     input array have no history and are dropped.
     """
 
-    def __init__(self, lookback: int = 24, units: int = 32, epochs: int = 10, batch_size: int = 64, random_seed: int = 42):
+    def __init__(
+        self,
+        lookback: int = 24,
+        units: int = 32,
+        epochs: int = 10,
+        batch_size: int = 64,
+        random_seed: int = 42,
+    ):
         self.lookback = lookback
         self.units = units
         self.epochs = epochs

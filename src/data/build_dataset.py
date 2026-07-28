@@ -32,9 +32,7 @@ def _load_consumption(raw_dir, resample_freq: str) -> pd.DataFrame:
         na_values=["?"],
         low_memory=False,
     )
-    df["timestamp"] = pd.to_datetime(
-        df["Date"] + " " + df["Time"], format="%d/%m/%Y %H:%M:%S"
-    )
+    df["timestamp"] = pd.to_datetime(df["Date"] + " " + df["Time"], format="%d/%m/%Y %H:%M:%S")
     df = df.set_index("timestamp").drop(columns=["Date", "Time"])
     df = df.rename(columns=CONSUMPTION_COLUMNS)
     for col in df.columns:

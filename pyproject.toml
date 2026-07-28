@@ -1,0 +1,12 @@
+[tool.ruff]
+line-length = 110
+
+[tool.ruff.lint]
+# I001 (import sorting) is intentionally disabled: run_forecasting.py and
+# run_battery_optimization.py must import tensorflow before xgboost/shap to
+# avoid a native threading deadlock (see src/models/lstm_model.py), which an
+# automatic alphabetical/isort reorder would silently undo.
+ignore = ["I001"]
+
+[tool.black]
+line-length = 110

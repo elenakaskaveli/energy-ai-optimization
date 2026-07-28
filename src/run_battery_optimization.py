@@ -10,8 +10,8 @@ import logging
 import matplotlib
 
 matplotlib.use("Agg")  # headless: never try to open a GUI window
-import matplotlib.pyplot as plt  # noqa: E402
-import pandas as pd  # noqa: E402
+import matplotlib.pyplot as plt
+import pandas as pd
 
 from src.config import load_config, resolve_path
 from src.optimization.battery import heuristic_battery_schedule, no_battery_cost, optimize_battery_lp
@@ -91,7 +91,9 @@ def main():
     pd.Series(summary).to_json(reports_dir / "battery_optimization_summary.json", indent=2)
 
     if example_day_schedules is not None:
-        _plot_example_day(example_day_schedules, resolve_path("reports/figures") / "battery_schedule_example.png")
+        _plot_example_day(
+            example_day_schedules, resolve_path("reports/figures") / "battery_schedule_example.png"
+        )
 
     return summary, totals
 
@@ -107,7 +109,9 @@ def _plot_example_day(schedules: dict, output_path):
     axes[0].legend()
 
     axes[1].plot(idx, schedules["lp"]["soc_kwh"], label="Battery SOC (LP-optimal)", color="green")
-    axes[1].plot(idx, schedules["heuristic"]["soc_kwh"], label="Battery SOC (heuristic)", color="green", linestyle="--")
+    axes[1].plot(
+        idx, schedules["heuristic"]["soc_kwh"], label="Battery SOC (heuristic)", color="green", linestyle="--"
+    )
     axes[1].set_ylabel("State of charge (kWh)")
     axes[1].set_title("Battery state of charge: LP-optimal vs. rule-based heuristic")
     axes[1].legend()

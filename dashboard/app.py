@@ -10,7 +10,11 @@ import streamlit as st
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from src.config import load_config, resolve_path  # noqa: E402
-from src.optimization.battery import heuristic_battery_schedule, no_battery_cost, optimize_battery_lp  # noqa: E402
+from src.optimization.battery import (
+    heuristic_battery_schedule,
+    no_battery_cost,
+    optimize_battery_lp,
+)  # noqa: E402
 from src.solar.pv_estimation import estimate_pv_generation  # noqa: E402
 
 st.set_page_config(page_title="Smart Home Energy Management", layout="wide")
@@ -83,7 +87,11 @@ with tab_forecast:
     else:
         min_date, max_date = predictions.index.min().date(), predictions.index.max().date()
         selected_date = st.date_input(
-            "Select a day to inspect", value=min_date, min_value=min_date, max_value=max_date, key="forecast_date"
+            "Select a day to inspect",
+            value=min_date,
+            min_value=min_date,
+            max_value=max_date,
+            key="forecast_date",
         )
         day_predictions = predictions.loc[str(selected_date)]
 
@@ -93,7 +101,14 @@ with tab_forecast:
         )
 
         fig = go.Figure()
-        fig.add_trace(go.Scatter(x=day_predictions.index, y=day_predictions["actual"], name="Actual", line=dict(color="black", width=3)))
+        fig.add_trace(
+            go.Scatter(
+                x=day_predictions.index,
+                y=day_predictions["actual"],
+                name="Actual",
+                line=dict(color="black", width=3),
+            )
+        )
         for model in chosen_models:
             fig.add_trace(go.Scatter(x=day_predictions.index, y=day_predictions[model], name=model))
         fig.update_layout(
@@ -110,13 +125,23 @@ with tab_battery:
     test_dates = raw.loc[raw.index >= split_date].index
     min_date, max_date = test_dates.min().date(), test_dates.max().date()
     selected_date = st.date_input(
-        "Select a day to schedule", value=pd.Timestamp("2010-07-15").date(), min_value=min_date, max_value=max_date, key="battery_date"
+        "Select a day to schedule",
+        value=pd.Timestamp("2010-07-15").date(),
+        min_value=min_date,
+        max_value=max_date,
+        key="battery_date",
     )
 
     col1, col2, col3 = st.columns(3)
-    battery_capacity = col1.slider("Battery capacity (kWh)", 2.0, 20.0, float(config["battery"]["capacity_kwh"]), step=1.0)
-    pv_capacity = col2.slider("PV system size (kWp)", 1.0, 10.0, float(config["solar_pv"]["system_capacity_kw"]), step=0.5)
-    peak_price = col3.slider("Peak price (EUR/kWh)", 0.10, 0.60, float(config["tariff"]["peak_price_per_kwh"]), step=0.01)
+    battery_capacity = col1.slider(
+        "Battery capacity (kWh)", 2.0, 20.0, float(config["battery"]["capacity_kwh"]), step=1.0
+    )
+    pv_capacity = col2.slider(
+        "PV system size (kWp)", 1.0, 10.0, float(config["solar_pv"]["system_capacity_kw"]), step=0.5
+    )
+    peak_price = col3.slider(
+        "Peak price (EUR/kWh)", 0.10, 0.60, float(config["tariff"]["peak_price_per_kwh"]), step=0.01
+    )
 
     battery_cfg = dict(config["battery"])
     battery_cfg["capacity_kwh"] = battery_capacity
@@ -135,8 +160,14 @@ with tab_battery:
 
         m1, m2, m3 = st.columns(3)
         m1.metric("No battery cost", f"€{no_batt:.2f}")
-        m2.metric("Heuristic cost", f"€{heuristic['cost'].sum():.2f}", f"-{100 * (1 - heuristic['cost'].sum() / no_batt):.0f}%")
-        m3.metric("LP-optimal cost", f"€{lp['cost'].sum():.2f}", f"-{100 * (1 - lp['cost'].sum() / no_batt):.0f}%")
+        m2.metric(
+            "Heuristic cost",
+            f"€{heuristic['cost'].sum():.2f}",
+            f"-{100 * (1 - heuristic['cost'].sum() / no_batt):.0f}%",
+        )
+        m3.metric(
+            "LP-optimal cost", f"€{lp['cost'].sum():.2f}", f"-{100 * (1 - lp['cost'].sum() / no_batt):.0f}%"
+        )
 
         fig1 = go.Figure()
         fig1.add_trace(go.Scatter(x=day_df.index, y=day_demand, name="Demand", line=dict(color="black")))
@@ -145,8 +176,17 @@ with tab_battery:
         st.plotly_chart(fig1, use_container_width=True)
 
         fig2 = go.Figure()
-        fig2.add_trace(go.Scatter(x=day_df.index, y=lp["soc_kwh"], name="SOC (LP-optimal)", line=dict(color="green")))
-        fig2.add_trace(go.Scatter(x=day_df.index, y=heuristic["soc_kwh"], name="SOC (heuristic)", line=dict(color="green", dash="dash")))
+        fig2.add_trace(
+            go.Scatter(x=day_df.index, y=lp["soc_kwh"], name="SOC (LP-optimal)", line=dict(color="green"))
+        )
+        fig2.add_trace(
+            go.Scatter(
+                x=day_df.index,
+                y=heuristic["soc_kwh"],
+                name="SOC (heuristic)",
+                line=dict(color="green", dash="dash"),
+            )
+        )
         fig2.update_layout(title="Battery state of charge", yaxis_title="kWh", height=350)
         st.plotly_chart(fig2, use_container_width=True)
     else:

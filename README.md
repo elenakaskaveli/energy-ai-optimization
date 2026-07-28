@@ -1,10 +1,10 @@
 # Smart Home Energy Management System
 
+[![CI](https://github.com/elenakaskaveli/energy-ai-optimization/actions/workflows/ci.yml/badge.svg)](https://github.com/elenakaskaveli/energy-ai-optimization/actions/workflows/ci.yml)
+
 AI-driven system for a residential household that forecasts electricity demand,
 optimizes battery storage scheduling, and recommends solar PV integration —
 built on real consumption and weather data.
-
-> Status: in development. This README is updated as each component lands.
 
 ## Overview
 
@@ -19,6 +19,18 @@ Three components work together on a single-household scenario:
 3. **Renewable integration analysis** — estimates rooftop solar PV output from
    historical irradiance and recommends system sizing to reach target
    self-sufficiency levels.
+
+```mermaid
+flowchart LR
+    A[UCI household\nconsumption data] --> C[Hourly merged\ndataset]
+    B[Open-Meteo\nweather history] --> C
+    C --> D[Demand forecasting\nSeasonal Naive / Holt-Winters / XGBoost / LSTM]
+    C --> E[PV generation estimate\npvlib]
+    D --> F[Battery LP optimizer\nPuLP]
+    E --> F
+    F --> G[Streamlit dashboard]
+    D --> G
+```
 
 ## Data
 
@@ -71,19 +83,19 @@ credit. See [`notebooks/03_battery_optimization.ipynb`](notebooks/03_battery_opt
 
 ```
 energy-ai-optimization/
-├── config/config.yaml      # all tunable parameters (location, battery, tariff, models)
-├── data/                   # raw/ and processed/ datasets (not committed, fetched locally)
+├── .github/workflows/ci.yml  # lint + test on every push/PR
+├── config/config.yaml        # all tunable parameters (location, battery, tariff, models)
+├── data/                     # raw/ and processed/ datasets (not committed, fetched locally)
 ├── src/
-│   ├── data/               # fetching, cleaning, feature engineering
-│   ├── models/             # forecasting models
-│   ├── optimization/       # battery scheduling (linear programming)
-│   ├── solar/              # PV generation estimation
-│   ├── evaluation/         # metrics and model comparison
-│   └── visualization/      # plotting utilities
-├── notebooks/              # exploratory analysis and model development
-├── dashboard/              # Streamlit app
-├── tests/                  # pytest suite
-└── reports/                # generated figures
+│   ├── data/                 # fetching, cleaning, feature engineering
+│   ├── models/                # forecasting models
+│   ├── optimization/          # battery scheduling (linear programming)
+│   ├── solar/                 # PV generation estimation
+│   └── evaluation/            # metrics and model comparison
+├── notebooks/                 # exploratory analysis and model development (executed, with outputs)
+├── dashboard/                 # Streamlit app
+├── tests/                     # pytest suite
+└── reports/                   # generated figures, tables, and summaries
 ```
 
 ## Setup
@@ -119,6 +131,32 @@ An interactive Streamlit dashboard ties everything together:
 - **Demand Forecast** — actual vs. predicted household demand for any day in the test period, with a model selector
 - **Battery & Solar** — pick a day and adjust battery capacity / PV size / peak price sliders to see the cost impact live
 - **Model Comparison** — the forecasting model comparison table and SHAP feature-importance plot
+
+## Testing & CI
+
+```bash
+pytest tests/ -v        # 19 tests: data pipeline, features, models, battery optimization
+ruff check src tests    # lint
+black src tests         # format
+```
+
+GitHub Actions runs lint + the full test suite on every push and pull request
+(see [`.github/workflows/ci.yml`](.github/workflows/ci.yml)).
+
+## Limitations
+
+- **Single household, not a grid.** The consumption data is from one home in
+  Sceaux, France (2006–2010) — a well-established, complete public dataset,
+  chosen for reproducibility over recency. The methodology (forecasting,
+  optimization) is not tied to that specific household or period.
+- **PV and battery are simulated, not measured.** Solar generation is modeled
+  from historical irradiance with `pvlib`; the battery has realistic but
+  configurable specs (`config/config.yaml`). Real deployment would use actual
+  system specs and metered generation.
+- **Weather is treated as a perfect forecast.** The models use historical
+  (observed) weather rather than day-ahead weather forecasts, which is a
+  common simplification — a production system would swap in a weather
+  forecast API for the day-ahead scenario.
 
 ## Tech stack
 

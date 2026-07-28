@@ -13,14 +13,14 @@ import logging
 # Must be imported before xgboost/shap: on this platform, letting xgboost's
 # bundled OpenMP runtime initialize first causes tensorflow's threading setup
 # to deadlock the first time a Keras model is trained later in the process.
-import tensorflow  # noqa: F401,E402
+import tensorflow  # noqa: F401
 
-import matplotlib  # noqa: E402
+import matplotlib
 
 matplotlib.use("Agg")  # headless: never try to open a GUI window
-import matplotlib.pyplot as plt  # noqa: E402
-import pandas as pd  # noqa: E402
-import shap  # noqa: E402
+import matplotlib.pyplot as plt
+import pandas as pd
+import shap
 
 from src.config import load_config, resolve_path
 from src.evaluation.metrics import compare_models, evaluate

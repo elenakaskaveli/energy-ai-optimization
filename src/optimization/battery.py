@@ -10,7 +10,10 @@ import pulp
 def _hourly_prices(n_hours: int, tariff: dict) -> np.ndarray:
     peak_hours = set(tariff["peak_hours"])
     return np.array(
-        [tariff["peak_price_per_kwh"] if (h % 24) in peak_hours else tariff["off_peak_price_per_kwh"] for h in range(n_hours)]
+        [
+            tariff["peak_price_per_kwh"] if (h % 24) in peak_hours else tariff["off_peak_price_per_kwh"]
+            for h in range(n_hours)
+        ]
     )
 
 
@@ -83,7 +86,13 @@ def optimize_battery_lp(
     )
 
 
-def heuristic_battery_schedule(demand_kwh: np.ndarray, pv_kwh: np.ndarray, battery: dict, tariff: dict, feed_in_price_per_kwh: float = 0.06) -> pd.DataFrame:
+def heuristic_battery_schedule(
+    demand_kwh: np.ndarray,
+    pv_kwh: np.ndarray,
+    battery: dict,
+    tariff: dict,
+    feed_in_price_per_kwh: float = 0.06,
+) -> pd.DataFrame:
     """Greedy rule: charge from any PV surplus, discharge to cover any PV deficit."""
     n = len(demand_kwh)
     prices = _hourly_prices(n, tariff)
@@ -131,7 +140,9 @@ def heuristic_battery_schedule(demand_kwh: np.ndarray, pv_kwh: np.ndarray, batte
     return pd.DataFrame(rows)
 
 
-def no_battery_cost(demand_kwh: np.ndarray, pv_kwh: np.ndarray, tariff: dict, feed_in_price_per_kwh: float = 0.06) -> float:
+def no_battery_cost(
+    demand_kwh: np.ndarray, pv_kwh: np.ndarray, tariff: dict, feed_in_price_per_kwh: float = 0.06
+) -> float:
     """Reference cost if there were no battery at all (PV self-consumption only)."""
     n = len(demand_kwh)
     prices = _hourly_prices(n, tariff)
