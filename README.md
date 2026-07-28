@@ -47,6 +47,26 @@ XGBoost (day-ahead) is the model that feeds the battery optimization stage.
 See [`notebooks/02_forecasting.ipynb`](notebooks/02_forecasting.ipynb) for the
 full comparison, forecast plots, and a SHAP feature-importance breakdown.
 
+## Results so far: battery storage optimization
+
+A 5 kWp rooftop PV system (modeled with `pvlib` from historical irradiance)
+and a 10 kWh battery are scheduled with a linear program (PuLP), and compared
+against a greedy self-consumption heuristic and a no-battery baseline, over
+all 314 full days of the test period:
+
+| Strategy          | Total cost (314 days) | Savings vs. no battery |
+|--------------------|-----------------------|-------------------------|
+| No battery (PV only) | €1,053                | —                        |
+| Heuristic (greedy)    | €707                  | 33%                      |
+| LP-optimal            | €424                  | **60%**                  |
+
+The LP schedule beats the heuristic by a further ~40% because it plans
+ahead: it drains the battery during flat-price early-morning hours (when
+timing doesn't affect cost) specifically to free up storage headroom before
+the midday solar peak, so it can bank more of that surplus for the expensive
+evening peak-price hours instead of exporting it at the much lower feed-in
+credit. See [`notebooks/03_battery_optimization.ipynb`](notebooks/03_battery_optimization.ipynb).
+
 ## Project structure
 
 ```
@@ -85,7 +105,10 @@ python -m src.data.build_dataset
 # 2. Train and compare demand forecasting models
 python -m src.run_forecasting
 
-# 3. Run the dashboard
+# 3. Estimate solar PV generation and optimize battery scheduling
+python -m src.run_battery_optimization
+
+# 4. Run the dashboard
 streamlit run dashboard/app.py
 ```
 

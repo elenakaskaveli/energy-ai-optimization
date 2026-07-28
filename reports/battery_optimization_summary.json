@@ -1,0 +1,9 @@
+{
+  "days_evaluated":314.0,
+  "no_battery_total_eur":1053.0003705615,
+  "heuristic_total_eur":707.0489219302,
+  "lp_total_eur":423.5792997819,
+  "heuristic_savings_pct":32.8538771973,
+  "lp_savings_pct":59.7740597607,
+  "lp_vs_heuristic_improvement_pct":40.091938953
+}
