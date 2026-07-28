@@ -10,9 +10,17 @@ battery charge/discharge a day in advance.
 import json
 import logging
 
-import matplotlib.pyplot as plt
-import pandas as pd
-import shap
+# Must be imported before xgboost/shap: on this platform, letting xgboost's
+# bundled OpenMP runtime initialize first causes tensorflow's threading setup
+# to deadlock the first time a Keras model is trained later in the process.
+import tensorflow  # noqa: F401,E402
+
+import matplotlib  # noqa: E402
+
+matplotlib.use("Agg")  # headless: never try to open a GUI window
+import matplotlib.pyplot as plt  # noqa: E402
+import pandas as pd  # noqa: E402
+import shap  # noqa: E402
 
 from src.config import load_config, resolve_path
 from src.evaluation.metrics import compare_models, evaluate
@@ -128,6 +136,9 @@ def main():
     output_dir = resolve_path("reports/figures")
     output_dir.mkdir(parents=True, exist_ok=True)
     comparison.to_csv(resolve_path("reports") / "forecasting_model_comparison.csv")
+
+    predictions_df = pd.DataFrame({"actual": y_test, **predictions}, index=y_test.index)
+    predictions_df.to_csv(resolve_path("reports") / "forecasting_predictions.csv")
 
     with open(resolve_path("reports") / "forecasting_top_features.json", "w") as f:
         json.dump(top_features.to_dict(), f, indent=2)

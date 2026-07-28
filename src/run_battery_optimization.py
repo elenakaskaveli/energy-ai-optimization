@@ -7,8 +7,11 @@ LP-optimal battery schedule.
 
 import logging
 
-import matplotlib.pyplot as plt
-import pandas as pd
+import matplotlib
+
+matplotlib.use("Agg")  # headless: never try to open a GUI window
+import matplotlib.pyplot as plt  # noqa: E402
+import pandas as pd  # noqa: E402
 
 from src.config import load_config, resolve_path
 from src.optimization.battery import heuristic_battery_schedule, no_battery_cost, optimize_battery_lp

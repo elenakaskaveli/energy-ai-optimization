@@ -112,6 +112,14 @@ python -m src.run_battery_optimization
 streamlit run dashboard/app.py
 ```
 
+## Dashboard
+
+An interactive Streamlit dashboard ties everything together:
+
+- **Demand Forecast** — actual vs. predicted household demand for any day in the test period, with a model selector
+- **Battery & Solar** — pick a day and adjust battery capacity / PV size / peak price sliders to see the cost impact live
+- **Model Comparison** — the forecasting model comparison table and SHAP feature-importance plot
+
 ## Tech stack
 
 Python · pandas · scikit-learn · XGBoost · TensorFlow · statsmodels · pvlib · PuLP · Streamlit · pytest
