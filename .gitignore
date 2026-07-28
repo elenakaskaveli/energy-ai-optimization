@@ -38,6 +38,9 @@ reports/*.docx
 .vscode/
 .idea/
 
+# Unrelated stray file that occasionally lands in this directory (not project output)
+/offline.zip
+
 # Testing / tooling
 .pytest_cache/
 .ruff_cache/

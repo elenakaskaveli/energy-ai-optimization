@@ -1,6 +1,7 @@
 """LSTM sequence model for next-hour demand forecasting."""
 
 import numpy as np
+import tensorflow as tf
 from sklearn.preprocessing import StandardScaler
 from tensorflow import keras
 
@@ -32,7 +33,12 @@ class LSTMForecaster:
         self.model = None
 
     def _build_model(self, n_features: int):
-        keras.utils.set_random_seed(self.random_seed)
+        # NOTE: keras.utils.set_random_seed() also enables strict op determinism,
+        # which triggers a severe (multi-minute) LSTM training slowdown on some
+        # CPU/thread configurations. tf.random.set_seed() gives reproducible
+        # weight init without that side effect.
+        tf.random.set_seed(self.random_seed)
+        np.random.seed(self.random_seed)
         model = keras.Sequential(
             [
                 keras.layers.Input(shape=(self.lookback, n_features)),
