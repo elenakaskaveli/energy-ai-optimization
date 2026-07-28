@@ -11,6 +11,8 @@ data:
   raw_dir: "data/raw"
   processed_dir: "data/processed"
   resample_freq: "1h"
+  start_date: "2006-12-16"
+  end_date: "2010-11-26"
   train_test_split_date: "2010-01-01"
 
 weather:
