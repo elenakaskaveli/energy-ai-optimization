@@ -11,8 +11,8 @@ built on real consumption and weather data.
 Three components work together on a single-household scenario:
 
 1. **Demand forecasting** — predicts hourly household electricity consumption
-   using calendar and weather features. Baseline (seasonal naive / SARIMA) is
-   compared against XGBoost and an LSTM sequence model.
+   using calendar and weather features. Seasonal naive and Holt-Winters
+   baselines are compared against XGBoost and an LSTM sequence model.
 2. **Battery storage optimization** — given the demand forecast and estimated
    solar generation, a linear program schedules battery charge/discharge to
    minimize electricity cost and maximize self-consumption of solar energy.
@@ -27,6 +27,25 @@ Three components work together on a single-household scenario:
 - **Solar PV**: modeled with [`pvlib`](https://pvlib-python.readthedocs.io/) from historical irradiance.
 
 See [`data/README.md`](data/README.md) for details and fetch scripts.
+
+## Results so far: demand forecasting
+
+Models are compared on next-hour ("nowcast") and next-day ("day-ahead")
+forecasting of household demand — the day-ahead scenario is the realistic
+input for the battery optimization stage, since it has no access to data from
+less than 24h before the target hour:
+
+| Model                              | RMSE (kW) | MAE (kW) | MAPE (%) |
+|-------------------------------------|-----------|----------|----------|
+| XGBoost (nowcast, uses last hour)   | 0.49      | 0.34     | 42.7     |
+| XGBoost (day-ahead)                 | 0.62      | 0.45     | 62.2     |
+| LSTM                                | 0.65      | 0.48     | 65.7     |
+| Seasonal naive (day-ahead)          | 0.82      | 0.56     | 68.7     |
+| Holt-Winters                        | 1.15      | 0.98     | 187.2    |
+
+XGBoost (day-ahead) is the model that feeds the battery optimization stage.
+See [`notebooks/02_forecasting.ipynb`](notebooks/02_forecasting.ipynb) for the
+full comparison, forecast plots, and a SHAP feature-importance breakdown.
 
 ## Project structure
 
@@ -63,7 +82,10 @@ python -m src.data.fetch_consumption
 python -m src.data.fetch_weather
 python -m src.data.build_dataset
 
-# 2. Run the dashboard
+# 2. Train and compare demand forecasting models
+python -m src.run_forecasting
+
+# 3. Run the dashboard
 streamlit run dashboard/app.py
 ```
 
