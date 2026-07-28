@@ -1,0 +1,57 @@
+# Central configuration for the Smart Home Energy Management System
+
+location:
+  name: "Sceaux, France"
+  latitude: 48.778
+  longitude: 2.290
+  timezone: "Europe/Paris"
+
+data:
+  uci_consumption_url: "https://archive.ics.uci.edu/static/public/235/individual+household+electric+power+consumption.zip"
+  raw_dir: "data/raw"
+  processed_dir: "data/processed"
+  resample_freq: "1h"
+  train_test_split_date: "2010-01-01"
+
+weather:
+  provider: "open-meteo"
+  archive_endpoint: "https://archive-api.open-meteo.com/v1/archive"
+  hourly_variables:
+    - "temperature_2m"
+    - "shortwave_radiation"
+    - "wind_speed_10m"
+    - "cloud_cover"
+
+solar_pv:
+  system_capacity_kw: 5.0
+  tilt_deg: 30
+  azimuth_deg: 180
+  system_losses_pct: 14
+  module_type: "standard"
+
+battery:
+  capacity_kwh: 10.0
+  max_charge_rate_kw: 5.0
+  max_discharge_rate_kw: 5.0
+  round_trip_efficiency: 0.9
+  min_soc_pct: 10
+  max_soc_pct: 100
+  initial_soc_pct: 50
+
+tariff:
+  currency: "EUR"
+  peak_price_per_kwh: 0.30
+  off_peak_price_per_kwh: 0.15
+  peak_hours: [8, 9, 10, 11, 18, 19, 20, 21]
+
+forecasting:
+  target_column: "global_active_power_kw"
+  lookback_hours: 168
+  horizon_hours: 24
+  models:
+    - "seasonal_naive"
+    - "sarima"
+    - "xgboost"
+    - "lstm"
+
+random_seed: 42
