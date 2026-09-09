@@ -30,6 +30,9 @@ solar_pv:
   azimuth_deg: 180
   system_losses_pct: 14
   module_type: "standard"
+  candidate_sizes_kw: [2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0]
+  target_self_sufficiency_pct: 70
+  sizing_sample_days: 30
 
 battery:
   capacity_kwh: 10.0

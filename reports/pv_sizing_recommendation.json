@@ -1,0 +1,7 @@
+{
+  "target_self_sufficiency_pct":70,
+  "recommended_system_capacity_kw":8.0,
+  "recommended_self_sufficiency_pct":38.6099762487,
+  "target_met":false,
+  "sample_days_evaluated":30
+}
