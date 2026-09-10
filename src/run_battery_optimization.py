@@ -22,11 +22,14 @@ logger = logging.getLogger(__name__)
 
 
 def load_processed_dataset(config: dict) -> pd.DataFrame:
+    """Read the hourly dataset built by `src.data.build_dataset`."""
     path = resolve_path(config["data"]["processed_dir"]) / "household_energy_hourly.csv"
     return pd.read_csv(path, parse_dates=["timestamp"], index_col="timestamp")
 
 
 def main():
+    """Estimate PV generation, then run all three battery scenarios day by day
+    over the full test period and save the aggregated cost comparison."""
     config = load_config()
     target_column = config["forecasting"]["target_column"]
     split_date = config["data"]["train_test_split_date"]
@@ -99,6 +102,8 @@ def main():
 
 
 def _plot_example_day(schedules: dict, output_path):
+    """Save a two-panel figure for one sample day: demand vs. PV, and battery
+    state of charge under the heuristic vs. the LP-optimal schedule."""
     idx = schedules["index"]
     fig, axes = plt.subplots(2, 1, figsize=(12, 7), sharex=True)
 

@@ -8,6 +8,8 @@ import pulp
 
 
 def _hourly_prices(n_hours: int, tariff: dict) -> np.ndarray:
+    """Per-hour electricity price array: `tariff["peak_price_per_kwh"]` during
+    `tariff["peak_hours"]` (hour-of-day, 0-23), off-peak otherwise."""
     peak_hours = set(tariff["peak_hours"])
     return np.array(
         [
@@ -47,6 +49,8 @@ def optimize_battery_lp(
 
     prob = pulp.LpProblem("battery_schedule", pulp.LpMinimize)
 
+    # Five unknowns per hour, solved jointly for the whole horizon at once (unlike
+    # the heuristic below, which decides one hour at a time with no look-ahead).
     charge = [pulp.LpVariable(f"charge_{t}", 0, max_charge) for t in range(n)]
     discharge = [pulp.LpVariable(f"discharge_{t}", 0, max_discharge) for t in range(n)]
     soc = [pulp.LpVariable(f"soc_{t}", min_soc, max_soc) for t in range(n)]
@@ -55,10 +59,14 @@ def optimize_battery_lp(
 
     for t in range(n):
         prev_soc = initial_soc if t == 0 else soc[t - 1]
+        # Battery physics: charge adds eta * (kWh in), discharge removes (kWh out) / eta.
         prob += soc[t] == prev_soc + charge[t] * eta - discharge[t] / eta
-        # energy balance: supply == demand
+        # Energy balance: everything supplied must equal everything consumed, every hour.
         prob += pv_kwh[t] + discharge[t] + grid_import[t] == demand_kwh[t] + charge[t] + grid_export[t]
 
+    # Objective: minimize total cost — money spent importing, minus money earned
+    # exporting, plus a tiny wear cost so the solver won't cycle the battery
+    # pointlessly when it has no effect on the total.
     prob += pulp.lpSum(
         grid_import[t] * prices[t]
         - grid_export[t] * feed_in_price_per_kwh
@@ -93,7 +101,12 @@ def heuristic_battery_schedule(
     tariff: dict,
     feed_in_price_per_kwh: float = 0.06,
 ) -> pd.DataFrame:
-    """Greedy rule: charge from any PV surplus, discharge to cover any PV deficit."""
+    """Greedy rule: charge from any PV surplus, discharge to cover any PV deficit.
+
+    Decides one hour at a time from only that hour's own surplus/deficit, with
+    no knowledge of what demand or PV will look like later — unlike
+    `optimize_battery_lp`, it can't deliberately save capacity for later.
+    """
     n = len(demand_kwh)
     prices = _hourly_prices(n, tariff)
 
@@ -111,9 +124,13 @@ def heuristic_battery_schedule(
         charge = discharge = 0.0
 
         if net > 0:
+            # `/ eta` because charging isn't lossless: to raise stored energy by
+            # (max_soc - soc), more than that amount must actually be pushed in.
             room = (max_soc - soc) / eta
             charge = min(net, max_charge, room)
         elif net < 0:
+            # `* eta` for the same reason in reverse: discharging this much stored
+            # energy only delivers `available` kWh of usable output.
             available = (soc - min_soc) * eta
             discharge = min(-net, max_discharge, available)
 

@@ -5,14 +5,21 @@ import pandas as pd
 
 
 def rmse(y_true, y_pred) -> float:
+    """Root mean squared error, in the target's own units (kW). Penalizes large
+    errors more than small ones, since errors are squared before averaging."""
     return float(np.sqrt(np.mean((np.asarray(y_true) - np.asarray(y_pred)) ** 2)))
 
 
 def mae(y_true, y_pred) -> float:
+    """Mean absolute error, in the target's own units (kW). Treats all errors
+    equally regardless of size, unlike RMSE."""
     return float(np.mean(np.abs(np.asarray(y_true) - np.asarray(y_pred))))
 
 
 def mape(y_true, y_pred, epsilon: float = 1e-3) -> float:
+    """Mean absolute percentage error. `epsilon` floors the denominator so a
+    near-zero actual value doesn't divide by (near) zero — but see `wape` for
+    why this metric still distorts easily on this dataset's overnight hours."""
     y_true, y_pred = np.asarray(y_true), np.asarray(y_pred)
     denom = np.clip(np.abs(y_true), epsilon, None)
     return float(np.mean(np.abs((y_true - y_pred) / denom)) * 100)
@@ -29,6 +36,7 @@ def wape(y_true, y_pred) -> float:
 
 
 def evaluate(y_true, y_pred) -> dict:
+    """Compute all four accuracy metrics at once for one set of predictions."""
     return {
         "RMSE": rmse(y_true, y_pred),
         "MAE": mae(y_true, y_pred),
@@ -38,5 +46,9 @@ def evaluate(y_true, y_pred) -> dict:
 
 
 def compare_models(results: dict[str, dict]) -> pd.DataFrame:
-    """results: {model_name: {"RMSE": ..., "MAE": ..., "MAPE": ...}}"""
+    """Assemble per-model metric dicts (as returned by `evaluate`) into one
+    table, sorted best-to-worst by RMSE.
+
+    `results` is `{model_name: {"RMSE": ..., "MAE": ..., "MAPE": ..., "WAPE": ...}}`.
+    """
     return pd.DataFrame(results).T.sort_values("RMSE")

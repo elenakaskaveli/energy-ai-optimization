@@ -14,6 +14,8 @@ RAW_FILENAME = "weather.csv"
 
 
 def _fetch_year(config: dict, start: str, end: str) -> pd.DataFrame:
+    """One archive-API call for a single year's date range (the API doesn't
+    accept the full multi-year span in one request)."""
     params = {
         "latitude": config["location"]["latitude"],
         "longitude": config["location"]["longitude"],
@@ -29,6 +31,7 @@ def _fetch_year(config: dict, start: str, end: str) -> pd.DataFrame:
 
 
 def fetch_weather(config: dict | None = None) -> None:
+    """Download historical weather one year at a time and concatenate into one CSV."""
     config = config or load_config()
     raw_dir = resolve_path(config["data"]["raw_dir"])
     raw_dir.mkdir(parents=True, exist_ok=True)

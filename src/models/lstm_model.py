@@ -7,6 +7,12 @@ from tensorflow import keras
 
 
 def create_sequences(features: np.ndarray, target: np.ndarray, lookback: int):
+    """Slide a `lookback`-hour window over `features` to build (sequence, next-value) pairs.
+
+    An LSTM reads a sequence, not a single row, so this is the reshaping step
+    between a flat feature table and the 3D (samples, lookback, n_features)
+    input Keras expects.
+    """
     X, y = [], []
     for i in range(lookback, len(features)):
         X.append(features[i - lookback : i])
@@ -40,6 +46,9 @@ class LSTMForecaster:
         self.model = None
 
     def _build_model(self, n_features: int):
+        """Construct a single-LSTM-layer network: one LSTM layer summarizes the
+        lookback window into a fixed-size hidden state, and a Dense layer maps
+        that state to the single-value prediction."""
         # NOTE: keras.utils.set_random_seed() also enables strict op determinism,
         # which triggers a severe (multi-minute) LSTM training slowdown on some
         # CPU/thread configurations. tf.random.set_seed() gives reproducible
@@ -57,6 +66,12 @@ class LSTMForecaster:
         return model
 
     def fit(self, features: np.ndarray, target: np.ndarray) -> "LSTMForecaster":
+        """Scale inputs/target, build the windowed sequences, and train the network.
+
+        Scaling both features and target to zero mean / unit variance is
+        standard practice for neural nets: it keeps gradients well-behaved
+        when inputs are on very different scales (e.g. degrees vs. watts).
+        """
         features_scaled = self.feature_scaler.fit_transform(features)
         target_scaled = self.target_scaler.fit_transform(target.reshape(-1, 1)).ravel()
         X_seq, y_seq = create_sequences(features_scaled, target_scaled, self.lookback)
@@ -65,6 +80,7 @@ class LSTMForecaster:
         return self
 
     def predict(self, features: np.ndarray) -> np.ndarray:
+        """Predict on already-scaled-fit features, inverse-transforming back to real units."""
         features_scaled = self.feature_scaler.transform(features)
         dummy_target = np.zeros(len(features_scaled))
         X_seq, _ = create_sequences(features_scaled, dummy_target, self.lookback)

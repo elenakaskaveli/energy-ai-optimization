@@ -5,6 +5,11 @@ import pandas as pd
 
 
 def add_calendar_features(df: pd.DataFrame, country: str = "FR") -> pd.DataFrame:
+    """Add hour, day-of-week, month, weekend, and public-holiday flags from the index.
+
+    All of these are known in advance for any future timestamp, so they carry
+    no leakage risk regardless of forecast horizon.
+    """
     df = df.copy()
     idx = df.index
     df["hour"] = idx.hour
@@ -18,6 +23,11 @@ def add_calendar_features(df: pd.DataFrame, country: str = "FR") -> pd.DataFrame
 
 
 def add_lag_features(df: pd.DataFrame, target_column: str, lags=(1, 24, 168)) -> pd.DataFrame:
+    """Add `{target_column}_lag_{n}h` columns: the target's value n hours earlier.
+
+    Which lags are safe to use depends on the forecast horizon — see
+    `build_features` for the nowcast vs. day-ahead distinction.
+    """
     df = df.copy()
     for lag in lags:
         df[f"{target_column}_lag_{lag}h"] = df[target_column].shift(lag)
@@ -86,4 +96,5 @@ def build_features(
 
 
 def get_feature_columns(df: pd.DataFrame, target_column: str) -> list[str]:
+    """All columns of a feature table except the prediction target itself."""
     return [c for c in df.columns if c != target_column]

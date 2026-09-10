@@ -9,6 +9,7 @@ CONFIG_PATH = REPO_ROOT / "config" / "config.yaml"
 
 
 def load_config(path: Path = CONFIG_PATH) -> dict:
+    """Load config/config.yaml into a nested dict (location, data, models, battery, tariff, etc.)."""
     with open(path) as f:
         return yaml.safe_load(f)
 

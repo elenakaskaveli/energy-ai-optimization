@@ -25,6 +25,13 @@ CONSUMPTION_COLUMNS = {
 
 
 def _load_consumption(raw_dir, resample_freq: str) -> pd.DataFrame:
+    """Load the raw per-minute UCI file and resample it to hourly means.
+
+    Combines the file's separate Date/Time columns into one timestamp index,
+    coerces "?" (the UCI dataset's missing-value marker) to NaN, and averages
+    per-minute readings into hourly ones since the rest of the project works
+    at hourly resolution.
+    """
     path = raw_dir / CONSUMPTION_FILENAME
     df = pd.read_csv(
         path,
@@ -41,12 +48,18 @@ def _load_consumption(raw_dir, resample_freq: str) -> pd.DataFrame:
 
 
 def _load_weather(raw_dir) -> pd.DataFrame:
+    """Load the raw Open-Meteo CSV, indexed by timestamp (already hourly)."""
     path = raw_dir / WEATHER_FILENAME
     df = pd.read_csv(path, parse_dates=["time"])
     return df.set_index("time").rename_axis("timestamp")
 
 
 def build_dataset(config: dict | None = None) -> pd.DataFrame:
+    """Merge consumption and weather into one hourly table and save it to disk.
+
+    This is the single "source of truth" file every other script reads from —
+    the raw consumption/weather files are never touched again downstream.
+    """
     config = config or load_config()
     raw_dir = resolve_path(config["data"]["raw_dir"])
     processed_dir = resolve_path(config["data"]["processed_dir"])

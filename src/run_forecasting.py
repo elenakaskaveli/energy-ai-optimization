@@ -74,11 +74,14 @@ def _tune_xgboost(X_train: pd.DataFrame, y_train: pd.Series, validation_fraction
 
 
 def load_processed_dataset(config: dict) -> pd.DataFrame:
+    """Read the hourly dataset built by `src.data.build_dataset`."""
     path = resolve_path(config["data"]["processed_dir"]) / "household_energy_hourly.csv"
     return pd.read_csv(path, parse_dates=["timestamp"], index_col="timestamp")
 
 
 def main():
+    """Build both feature sets, train all five models, and save the comparison,
+    predictions, top features, and plots to reports/."""
     config = load_config()
     target_column = config["forecasting"]["target_column"]
     split_date = config["data"]["train_test_split_date"]
@@ -195,6 +198,8 @@ def main():
 
 
 def _plot_shap_summary(xgb_model, X_test: pd.DataFrame, output_path, sample_size: int = 1000):
+    """Save a SHAP summary plot showing which features drive the day-ahead
+    XGBoost model's predictions, computed on a random sample for speed."""
     sample = X_test.sample(n=min(sample_size, len(X_test)), random_state=42)
     explainer = shap.TreeExplainer(xgb_model)
     shap_values = explainer.shap_values(sample)
@@ -208,6 +213,7 @@ def _plot_shap_summary(xgb_model, X_test: pd.DataFrame, output_path, sample_size
 
 
 def _plot_predictions(y_test: pd.Series, predictions: dict, output_path):
+    """Plot actual vs. every model's predicted demand for one sample week."""
     sample = slice(0, 24 * 7)  # first week of the test set
     fig, ax = plt.subplots(figsize=(12, 5))
     ax.plot(y_test.index[sample], y_test.iloc[sample], label="Actual", color="black", linewidth=1.5)

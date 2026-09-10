@@ -15,6 +15,7 @@ RAW_FILENAME = "household_power_consumption.txt"
 
 
 def fetch_consumption(config: dict | None = None) -> None:
+    """Download and unzip the UCI consumption dataset if it isn't already on disk."""
     config = config or load_config()
     raw_dir = resolve_path(config["data"]["raw_dir"])
     raw_dir.mkdir(parents=True, exist_ok=True)

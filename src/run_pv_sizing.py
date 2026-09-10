@@ -21,6 +21,7 @@ logger = logging.getLogger(__name__)
 
 
 def load_processed_dataset(config: dict) -> pd.DataFrame:
+    """Read the hourly dataset built by `src.data.build_dataset`."""
     path = resolve_path(config["data"]["processed_dir"]) / "household_energy_hourly.csv"
     return pd.read_csv(path, parse_dates=["timestamp"], index_col="timestamp")
 
@@ -34,6 +35,14 @@ def _self_sufficiency_pct(demand_kwh, pv_kwh, battery: dict, tariff: dict) -> fl
 
 
 def recommend_pv_size(raw: pd.DataFrame, config: dict) -> tuple[dict, pd.DataFrame]:
+    """Score each candidate PV size on self-sufficiency and pick the smallest
+    one that meets `config["solar_pv"]["target_self_sufficiency_pct"]`.
+
+    Falls back to the best-performing candidate (reported honestly as not
+    meeting the target) if none of them reach it.
+
+    Returns (summary dict, per-size comparison DataFrame).
+    """
     target_column = config["forecasting"]["target_column"]
     split_date = config["data"]["train_test_split_date"]
     sample_days = config["solar_pv"]["sizing_sample_days"]
@@ -87,6 +96,7 @@ def recommend_pv_size(raw: pd.DataFrame, config: dict) -> tuple[dict, pd.DataFra
 
 
 def main():
+    """Run the PV sizing sweep and save the recommendation and comparison table."""
     config = load_config()
     raw = load_processed_dataset(config)
 
