@@ -7,6 +7,7 @@ to data from 24+ hours before the target — the realistic case for scheduling
 battery charge/discharge a day in advance.
 """
 
+import itertools
 import json
 import logging
 
@@ -23,7 +24,7 @@ import pandas as pd
 import shap
 
 from src.config import load_config, resolve_path
-from src.evaluation.metrics import compare_models, evaluate
+from src.evaluation.metrics import compare_models, evaluate, rmse
 from src.features import build_features, get_feature_columns
 from src.models.baseline import seasonal_naive_predict
 from src.models.lstm_model import LSTMForecaster
@@ -41,6 +42,35 @@ LSTM_FEATURE_COLUMNS = [
     "hour",
     "day_of_week",
 ]
+
+SUBMETERING_COLUMNS = ("sub_metering_1_wh", "sub_metering_2_wh", "sub_metering_3_wh")
+
+XGBOOST_PARAM_GRID = {
+    "n_estimators": [200, 300, 500],
+    "max_depth": [4, 6, 8],
+    "learning_rate": [0.03, 0.05, 0.1],
+}
+
+
+def _tune_xgboost(X_train: pd.DataFrame, y_train: pd.Series, validation_fraction: float = 0.2) -> dict:
+    """Small time-respecting grid search: hold out the last slice of training
+    data as validation (never shuffled, since this is a time series), fit
+    each candidate on the rest, and keep the params with the lowest RMSE."""
+    split_idx = int(len(X_train) * (1 - validation_fraction))
+    X_fit, X_val = X_train.iloc[:split_idx], X_train.iloc[split_idx:]
+    y_fit, y_val = y_train.iloc[:split_idx], y_train.iloc[split_idx:]
+
+    best_params, best_rmse = None, float("inf")
+    keys = list(XGBOOST_PARAM_GRID.keys())
+    for values in itertools.product(*XGBOOST_PARAM_GRID.values()):
+        params = dict(zip(keys, values))
+        model = XGBoostForecaster(**params).fit(X_fit, y_fit)
+        val_rmse = rmse(y_val, model.predict(X_val))
+        if val_rmse < best_rmse:
+            best_rmse, best_params = val_rmse, params
+
+    logger.info("Best XGBoost params (val RMSE %.4f): %s", best_rmse, best_params)
+    return best_params
 
 
 def load_processed_dataset(config: dict) -> pd.DataFrame:
@@ -62,8 +92,12 @@ def main():
     #  - day-ahead: excludes anything more recent than 24h before the target, i.e.
     #    the earliest lag is "same hour yesterday" — this is the realistic input
     #    available when scheduling battery charge/discharge a day in advance.
-    nowcast_features = build_features(raw, target_column=target_column, lags=(1, 24, 168))
-    day_ahead_features = build_features(raw, target_column=target_column, lags=(24, 48, 168))
+    nowcast_features = build_features(
+        raw, target_column=target_column, submetering_columns=SUBMETERING_COLUMNS, lags=(1, 24, 168)
+    )
+    day_ahead_features = build_features(
+        raw, target_column=target_column, submetering_columns=SUBMETERING_COLUMNS, lags=(24, 48, 168)
+    )
 
     def split(features_df):
         train = features_df[features_df.index < split_date]
@@ -97,9 +131,14 @@ def main():
     results["XGBoost (nowcast, uses last hour)"] = evaluate(nowcast_test[target_column], xgb_nowcast_preds)
     predictions["XGBoost (nowcast)"] = xgb_nowcast_preds
 
-    # 3b. XGBoost — day-ahead (no access to anything within 24h of the target)
+    # 3b. XGBoost — day-ahead (no access to anything within 24h of the target).
+    # Hyperparameters are chosen by a small time-respecting grid search rather
+    # than left at library defaults, since this is the model that ships.
     day_ahead_feature_columns = get_feature_columns(day_ahead_features, target_column)
-    xgb_day_ahead = XGBoostForecaster().fit(
+    best_params = _tune_xgboost(
+        day_ahead_train[day_ahead_feature_columns], day_ahead_train[target_column]
+    )
+    xgb_day_ahead = XGBoostForecaster(**best_params).fit(
         day_ahead_train[day_ahead_feature_columns], day_ahead_train[target_column]
     )
     xgb_day_ahead_preds = xgb_day_ahead.predict(day_ahead_test[day_ahead_feature_columns])
@@ -129,6 +168,13 @@ def main():
     # since we prefixed with train tail, predictions align 1:1 with all of `test`.
     results["LSTM"] = evaluate(y_test, lstm_preds)
     predictions["LSTM"] = lstm_preds
+
+    # 5. Ensemble: average of the two learned day-ahead-safe models (XGBoost +
+    # LSTM). Both are evaluated on the same test rows, so a simple average
+    # needs no re-alignment.
+    ensemble_preds = (xgb_day_ahead_preds + lstm_preds) / 2
+    results["Ensemble (XGBoost + LSTM)"] = evaluate(day_ahead_test[target_column], ensemble_preds)
+    predictions["Ensemble"] = ensemble_preds
 
     comparison = compare_models(results)
     logger.info("Model comparison:\n%s", comparison)

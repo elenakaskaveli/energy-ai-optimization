@@ -1,12 +1,12 @@
 {
-  "global_active_power_kw_lag_168h": 0.25570711493492126,
-  "hour": 0.13550063967704773,
-  "global_active_power_kw_lag_24h": 0.10101118683815002,
-  "day_of_week": 0.062411196529865265,
-  "shortwave_radiation": 0.05576353520154953,
-  "global_active_power_kw_lag_48h": 0.052936602383852005,
-  "is_holiday": 0.0486750490963459,
-  "global_active_power_kw_rollmean_24h": 0.04741780087351799,
-  "global_active_power_kw_rollmean_168h": 0.04677731543779373,
-  "month": 0.040238913148641586
+  "global_active_power_kw_lag_168h": 0.2663171589374542,
+  "global_active_power_kw_lag_24h": 0.16108162701129913,
+  "hour": 0.08989639580249786,
+  "global_active_power_kw_lag_48h": 0.088505320250988,
+  "shortwave_radiation": 0.06003883108496666,
+  "temperature_2m": 0.04017133265733719,
+  "global_active_power_kw_rollmean_168h": 0.031384680420160294,
+  "day_of_week": 0.029954077675938606,
+  "global_active_power_kw_rollmean_24h": 0.028662683442234993,
+  "global_active_power_kw_rollstd_24h": 0.024445129558444023
 }

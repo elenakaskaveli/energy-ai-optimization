@@ -47,13 +47,21 @@ forecasting of household demand — the day-ahead scenario is the realistic
 input for the battery optimization stage, since it has no access to data from
 less than 24h before the target hour:
 
-| Model                              | RMSE (kW) | MAE (kW) | MAPE (%) |
-|-------------------------------------|-----------|----------|----------|
-| XGBoost (nowcast, uses last hour)   | 0.49      | 0.34     | 42.7     |
-| XGBoost (day-ahead)                 | 0.62      | 0.45     | 62.2     |
-| LSTM                                | 0.65      | 0.48     | 65.7     |
-| Seasonal naive (day-ahead)          | 0.82      | 0.56     | 68.7     |
-| Holt-Winters                        | 1.15      | 0.98     | 187.2    |
+| Model                              | RMSE (kW) | MAE (kW) | MAPE (%) | WAPE (%) |
+|-------------------------------------|-----------|----------|----------|----------|
+| XGBoost (nowcast, uses last hour)   | 0.47      | 0.33     | 39.8     | 30.7     |
+| XGBoost (day-ahead)                 | 0.61      | 0.45     | 62.5     | 42.3     |
+| Ensemble (XGBoost + LSTM)           | 0.61      | 0.45     | 63.1     | 42.7     |
+| LSTM                                | 0.65      | 0.48     | 65.9     | 44.9     |
+| Seasonal naive (day-ahead)          | 0.82      | 0.56     | 68.7     | 52.8     |
+| Holt-Winters                        | 1.15      | 0.98     | 187.2    | 92.2     |
+
+MAPE is skewed by near-zero overnight consumption hours; WAPE (aggregate
+error weighted by actual demand) is the more reliable of the two percentage
+metrics for this dataset. XGBoost (day-ahead) also uses lagged sub-metering
+(kitchen/laundry/water-heater circuits) as additional features, and its
+hyperparameters are chosen by a small time-respecting grid search rather than
+left at library defaults.
 
 XGBoost (day-ahead) is the model that feeds the battery optimization stage.
 See [`notebooks/02_forecasting.ipynb`](notebooks/02_forecasting.ipynb) for the

@@ -1,7 +1,13 @@
 import numpy as np
 import pandas as pd
 
-from src.features import add_calendar_features, add_lag_features, add_rolling_features, build_features
+from src.features import (
+    add_calendar_features,
+    add_lag_features,
+    add_rolling_features,
+    add_submetering_lag_features,
+    build_features,
+)
 
 
 def _sample_df(n=200):
@@ -13,6 +19,7 @@ def _sample_df(n=200):
             "shortwave_radiation": np.random.default_rng(1).uniform(0, 500, n),
             "wind_speed_10m": np.random.default_rng(2).uniform(0, 20, n),
             "cloud_cover": np.random.default_rng(3).integers(0, 100, n),
+            "sub_metering_1_wh": np.random.default_rng(4).uniform(0, 20, n),
         },
         index=idx,
     )
@@ -52,3 +59,27 @@ def test_build_features_drops_warmup_nans():
     features = build_features(df, target_column="global_active_power_kw", lags=(1, 24), rolling_windows=(24,))
     assert features.isna().sum().sum() == 0
     assert len(features) == len(df) - 24
+
+
+def test_add_submetering_lag_features_shifts_correctly():
+    df = _sample_df(10)
+    out = add_submetering_lag_features(df, ["sub_metering_1_wh"], lags=(1,))
+    shifted = out["sub_metering_1_wh_lag_1h"]
+    assert pd.isna(shifted.iloc[0])
+    assert shifted.iloc[1] == df["sub_metering_1_wh"].iloc[0]
+
+
+def test_build_features_with_submetering_columns():
+    df = _sample_df(300)
+    features = build_features(
+        df,
+        target_column="global_active_power_kw",
+        submetering_columns=("sub_metering_1_wh",),
+        lags=(24, 168),
+        rolling_windows=(24,),
+    )
+    assert "sub_metering_1_wh_lag_24h" in features.columns
+    assert "sub_metering_1_wh_lag_168h" in features.columns
+    # raw (unlagged) sub-metering column must not leak into the feature set
+    assert "sub_metering_1_wh" not in features.columns
+    assert features.isna().sum().sum() == 0
