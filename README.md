@@ -128,7 +128,10 @@ python -m src.run_forecasting
 # 3. Estimate solar PV generation and optimize battery scheduling
 python -m src.run_battery_optimization
 
-# 4. Run the dashboard
+# 4. Recommend a PV system size for a target self-sufficiency level
+python -m src.run_pv_sizing
+
+# 5. Run the dashboard
 streamlit run dashboard/app.py
 ```
 
