@@ -19,6 +19,9 @@ data/raw/*
 data/processed/*
 !data/raw/.gitkeep
 !data/processed/.gitkeep
+# Exception: the deployed dashboard reads this directly (no pipeline step
+# runs on Streamlit Community Cloud), so it's committed despite the rule above.
+!data/processed/household_energy_hourly.csv
 
 # Model artifacts
 *.h5
