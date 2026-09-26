@@ -1,6 +1,9 @@
 # Smart Home Energy Management System
 
 [![CI](https://github.com/elenakaskaveli/energy-ai-optimization/actions/workflows/ci.yml/badge.svg)](https://github.com/elenakaskaveli/energy-ai-optimization/actions/workflows/ci.yml)
+[![Open in Streamlit](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://energy-ai-optimization.streamlit.app/)
+
+**[Live dashboard →](https://energy-ai-optimization.streamlit.app/)**
 
 AI-driven system for a residential household that forecasts electricity demand,
 optimizes battery storage scheduling, and recommends solar PV integration —
