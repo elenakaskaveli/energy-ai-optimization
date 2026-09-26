@@ -51,6 +51,15 @@ XGBOOST_PARAM_GRID = {
     "learning_rate": [0.03, 0.05, 0.1],
 }
 
+# Deliberately tiny (4 combinations, not a full grid): each LSTM fit is far
+# slower than an XGBoost fit, so this stays a light pass rather than an
+# exhaustive search — but it means the LSTM is no longer left at raw
+# library defaults, which makes its comparison against tuned XGBoost fairer.
+LSTM_PARAM_GRID = {
+    "units": [32, 64],
+    "epochs": [10, 20],
+}
+
 
 def _tune_xgboost(X_train: pd.DataFrame, y_train: pd.Series, validation_fraction: float = 0.2) -> dict:
     """Small time-respecting grid search: hold out the last slice of training
@@ -70,6 +79,34 @@ def _tune_xgboost(X_train: pd.DataFrame, y_train: pd.Series, validation_fraction
             best_rmse, best_params = val_rmse, params
 
     logger.info("Best XGBoost params (val RMSE %.4f): %s", best_rmse, best_params)
+    return best_params
+
+
+def _tune_lstm(
+    train: pd.DataFrame, target_column: str, lookback: int, validation_fraction: float = 0.2
+) -> dict:
+    """Same time-respecting validation-split approach as `_tune_xgboost`, applied
+    to the LSTM's size (`units`) and training length (`epochs`)."""
+    split_idx = int(len(train) * (1 - validation_fraction))
+    fit_df, val_df = train.iloc[:split_idx], train.iloc[split_idx:]
+    # Prefix validation with `lookback` rows of fit data so its first prediction
+    # has a full window of context, same trick used for the test set in main().
+    val_context = pd.concat([fit_df.tail(lookback), val_df])
+    y_val = val_df[target_column].to_numpy()
+
+    best_params, best_rmse = None, float("inf")
+    keys = list(LSTM_PARAM_GRID.keys())
+    for values in itertools.product(*LSTM_PARAM_GRID.values()):
+        params = dict(zip(keys, values))
+        model = LSTMForecaster(lookback=lookback, **params).fit(
+            fit_df[LSTM_FEATURE_COLUMNS].to_numpy(), fit_df[target_column].to_numpy()
+        )
+        val_preds = model.predict(val_context[LSTM_FEATURE_COLUMNS].to_numpy())
+        val_rmse = rmse(y_val, val_preds)
+        if val_rmse < best_rmse:
+            best_rmse, best_params = val_rmse, params
+
+    logger.info("Best LSTM params (val RMSE %.4f): %s", best_rmse, best_params)
     return best_params
 
 
@@ -160,9 +197,11 @@ def main():
     train, test = nowcast_train, nowcast_test
     y_test = test[target_column]
 
-    # 4. LSTM
+    # 4. LSTM. Hyperparameters get the same small time-respecting tuning pass
+    # as XGBoost (day-ahead), so neither model is left at raw library defaults.
     lookback = 24
-    lstm = LSTMForecaster(lookback=lookback, units=32, epochs=10)
+    best_lstm_params = _tune_lstm(train, target_column, lookback)
+    lstm = LSTMForecaster(lookback=lookback, **best_lstm_params)
     lstm.fit(train[LSTM_FEATURE_COLUMNS].to_numpy(), train[target_column].to_numpy())
 
     context = pd.concat([train.tail(lookback), test])
