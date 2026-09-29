@@ -54,8 +54,8 @@ less than 24h before the target hour:
 |-------------------------------------|-----------|----------|----------|----------|
 | XGBoost (nowcast, uses last hour)   | 0.47      | 0.33     | 39.8     | 30.7     |
 | XGBoost (day-ahead)                 | 0.61      | 0.45     | 62.5     | 42.3     |
-| Ensemble (XGBoost + LSTM)           | 0.62      | 0.45     | 63.5     | 42.9     |
-| LSTM                                | 0.66      | 0.48     | 66.9     | 45.6     |
+| Ensemble (XGBoost + LSTM)           | 0.61      | 0.45     | 62.1     | 42.3     |
+| LSTM                                | 0.65      | 0.47     | 64.2     | 44.3     |
 | Seasonal naive (day-ahead)          | 0.82      | 0.56     | 68.7     | 52.8     |
 | Holt-Winters                        | 1.15      | 0.98     | 187.2    | 92.2     |
 
@@ -66,10 +66,10 @@ metrics for this dataset. XGBoost (day-ahead) also uses lagged sub-metering
 XGBoost (day-ahead) and LSTM have their hyperparameters chosen by a small
 time-respecting grid search rather than left at library defaults — for the
 LSTM this is a light pass over `units`/`epochs` only (4 combinations, since
-each fit is far slower than XGBoost's). On this test set the tuned LSTM
-scored marginally worse than the untuned version did previously: a real
-reminder that a validation-based pick doesn't always generalize, especially
-over such a small search space, rather than a sign the search is broken.
+each fit is far slower than XGBoost's). LSTM numbers vary slightly between
+runs even with a fixed random seed, since exact determinism isn't guaranteed
+under multi-threaded CPU training — the figures above are from a single
+representative run rather than an average.
 
 XGBoost (day-ahead) is the model that feeds the battery optimization stage.
 See [`notebooks/02_forecasting.ipynb`](notebooks/02_forecasting.ipynb) for the
