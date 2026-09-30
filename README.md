@@ -154,7 +154,7 @@ An interactive Streamlit dashboard ties everything together:
 ## Testing & CI
 
 ```bash
-pytest tests/ -v        # 19 tests: data pipeline, features, models, battery optimization
+pytest tests/ -v        # 24 tests: data pipeline, features, models, battery optimization, PV sizing
 ruff check src tests    # lint
 black src tests         # format
 ```
