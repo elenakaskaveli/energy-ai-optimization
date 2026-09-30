@@ -140,6 +140,7 @@ def main():
     )
 
     def split(features_df):
+        """Chronological train/test split at `split_date` (no shuffling, since order matters)."""
         train = features_df[features_df.index < split_date]
         test = features_df[features_df.index >= split_date]
         return train, test

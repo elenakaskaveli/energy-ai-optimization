@@ -25,10 +25,12 @@ class XGBoostForecaster:
         self.model = XGBRegressor(**params)
 
     def fit(self, X_train: pd.DataFrame, y_train: pd.Series) -> "XGBoostForecaster":
+        """Train the underlying XGBRegressor on the given feature/target table."""
         self.model.fit(X_train, y_train)
         return self
 
     def predict(self, X_test: pd.DataFrame):
+        """Predict the target for each row of `X_test`."""
         return self.model.predict(X_test)
 
     def feature_importances(self, feature_names) -> pd.Series:
